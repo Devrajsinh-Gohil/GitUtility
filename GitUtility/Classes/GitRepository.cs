@@ -44,10 +44,17 @@ namespace GitUtility.Classes
         List<Commit> GetCommits()
         {
             List<Commit> commits = new();
-            var repository = new Repository(RepoPath);
-            foreach (Commit commit in repository.Commits)
+            try
             {
-                commits.Add(commit);
+                var repository = new Repository(RepoPath);
+                foreach (Commit commit in repository.Commits)
+                {
+                    commits.Add(commit);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
             }
             return commits;
         }
@@ -61,11 +68,17 @@ namespace GitUtility.Classes
         List<Contributor> GetContributors()
         {
             List<Contributor> contributors = new();
-            var uniqueAuthors = Commits.Select(c => c.Author).Distinct(new AuthorComparer());
-
-            foreach (var author in uniqueAuthors)
+            try
             {
-                contributors.Add(new Contributor (author, GetContributorCommits(author.Email)));
+                var uniqueAuthors = Commits.Select(c => c.Author).Distinct(new AuthorComparer());
+                foreach (var author in uniqueAuthors)
+                {
+                    contributors.Add(new Contributor(author, GetContributorCommits(author.Email)));
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
             }
 
             return contributors.OrderByDescending(c => c.Contributions.Count).ToList();
@@ -79,8 +92,16 @@ namespace GitUtility.Classes
          */
         List<Commit> GetContributorCommits(string email)
         {
-            var commits = Commits.Where(c => c.Author.Email == email).ToList();
-            return commits;
+            try
+            {
+                var commits = Commits.Where(c => c.Author.Email == email).ToList();
+                return commits;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            return new();
         }
     }
 
@@ -92,8 +113,12 @@ namespace GitUtility.Classes
      */
     public class AuthorComparer : IEqualityComparer<Signature>
     {
-        public bool Equals(Signature x, Signature y)
+        public bool Equals(Signature? x, Signature? y)
         {
+            if (x == null && y == null)
+                return true;
+            if (x == null || y == null)
+                return false;
             return x.Email == y.Email;
         }
 
