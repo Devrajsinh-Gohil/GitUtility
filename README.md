@@ -2,4 +2,4 @@
 
 ## TASK 1: Class Diagram
 
-![GitUtilityClassDiagram](https://github.com/Devrajsinh-Gohil/GitUtility/assets/103804567/88a2ee77-78c3-4bbc-9db7-db0d054a0138)
+![GitUtilityClassDiagram](https://github.com/Devrajsinh-Gohil/GitUtility/assets/103804567/d4e0d569-f74f-4eea-94eb-12697f00ca5c)
