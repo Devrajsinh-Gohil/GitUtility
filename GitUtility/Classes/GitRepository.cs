@@ -6,9 +6,9 @@ namespace GitUtility.Classes
      * <summary>
      * Class to represent a Git Repository.
      * </summary>
-     */ 
-	public class GitRepository
-	{
+     */
+    public class GitRepository
+    {
 
         /**
          * <summary>
@@ -18,7 +18,7 @@ namespace GitUtility.Classes
         public string RepoPath { get; set; }
         public string RepoName { get; set; }
         public List<Commit> Commits { get; set; }
-		public List<Contributor> Contributors { get; set; }
+        public List<Contributor> Contributors { get; set; }
 
 
         /**
@@ -26,12 +26,12 @@ namespace GitUtility.Classes
          * Constructor for GitRepository.
          * </summary>
          * <param name="path">Takes a string input for Repository path</param>
-         */ 
+         */
         public GitRepository(string path)
-		{
+        {
             RepoPath = path;
             RepoName = Path.GetFileName(RepoPath);
-			Commits = GetCommits();
+            Commits = GetCommits();
             Contributors = GetContributors();
         }
 
@@ -81,7 +81,7 @@ namespace GitUtility.Classes
                 Console.WriteLine(e.Message);
             }
 
-            return contributors.OrderByDescending(c => c.Contributions.Count).ToList();
+            return contributors.OrderByDescending(c => c.TotalContributions.Count).ToList();
         }
 
         /**
