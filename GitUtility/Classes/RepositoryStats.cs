@@ -13,12 +13,14 @@
 		 * </summary>
 		 */
         public GitRepository Repository { get; set; }
-        public Contributor CurrentContributor { get; set; }
+        public Contributor? CurrentContributor { get; set; }
         public ContributionGraphGenerator ContributionGraph { get; set; }
         public int ContributorCount { get; set; }
+        public int AnnualContributorCount { get; set; }
         public List<Contributor> Top2Contributors { get; set; }
         public List<Contributor> AnnualTop2Contributors { get; set; }
-        public List<int> CurrentContributorRanks { get; set; }
+        public string CurrentContributorEmail { get; set; }
+        public List<string> CurrentContributorRanks { get; set; }
     
         /**
          * <summary>
@@ -29,18 +31,31 @@
          */
         public RepositoryStats(GitRepository repository, string contributorEmail)
         {
+            CurrentContributorEmail = contributorEmail;
             Repository = repository;
             CurrentContributor = FindContributorWithEmail(contributorEmail);
-            ContributionGraph = new ContributionGraphGenerator(CurrentContributor);
+            if (CurrentContributor != null)
+            {   
+                CurrentContributorRanks = GetRanks();
+            }
+            else {
+                CurrentContributorRanks =new List<string>{ "no contributions", "no contributions" };
+            }
             ContributorCount = repository.Contributors.Count;
+            AnnualContributorCount = repository.AnnualContributors.Count;
             Top2Contributors = GetTop2Contributor();
             AnnualTop2Contributors = GetTop2AnnualContributor();
-            CurrentContributorRanks = GetRanks();
+            ContributionGraph = new ContributionGraphGenerator(CurrentContributor);
         }
 
-        Contributor FindContributorWithEmail(string email)
+        Contributor? FindContributorWithEmail(string email)
         {
-            Contributor? contributor = Repository.Contributors.Find(c => c.Email == email) ?? throw new InvalidOperationException("Contributor with the given email was not found in: " + Repository.RepoName );
+            Contributor? contributor = Repository.Contributors.Find(c => c.Email == email);
+            if(contributor == null)
+            {
+                Console.WriteLine("Contributor with the given email was not found in: " + Repository.RepoName);
+                return null;
+            }
             return contributor;
         }
 
@@ -108,17 +123,17 @@
          * </summary>
          * <returns>List ranks of size 2, index 0 is overall rank and index 1 is annual rank.</returns>
          */
-        List<int> GetRanks()
+        List<string> GetRanks()
         {
-            List<int> ranks = new(2);
+            List<string> ranks = new(2);
             try
             {
                 // Overall Rank
-                ranks.Add(Repository.Contributors.FindIndex(c => c.Email == CurrentContributor.Email)+1);
+                ranks.Add((Repository.Contributors.FindIndex(c => c.Email == CurrentContributor.Email)+1).ToString());
 
                 // Annual Rank
                 List<Contributor> contributors = Repository.Contributors.OrderByDescending(c => c.AnnualContributions.Count).ToList();
-                ranks.Add(contributors.FindIndex(c => c.Email == CurrentContributor.Email) + 1);
+                ranks.Add((contributors.FindIndex(c => c.Email == CurrentContributor.Email) + 1).ToString());
             }
             catch (Exception e)
             {

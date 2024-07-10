@@ -19,7 +19,7 @@ namespace GitUtility.Classes
         public string RepoName { get; set; }
         public List<Commit> Commits { get; set; }
         public List<Contributor> Contributors { get; set; }
-
+        public List<Contributor> AnnualContributors { get; set; }
 
         /**
          * <summary>
@@ -33,6 +33,7 @@ namespace GitUtility.Classes
             RepoName = Path.GetFileName(RepoPath);
             Commits = GetCommits();
             Contributors = GetContributors();
+            AnnualContributors = GetContributorsLastYear();
         }
 
         /**
@@ -74,6 +75,36 @@ namespace GitUtility.Classes
                 foreach (var author in uniqueAuthors)
                 {
                     contributors.Add(new Contributor(author, GetContributorCommits(author.Email)));
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            return contributors.OrderByDescending(c => c.TotalContributions.Count).ToList();
+        }
+
+        /**
+         * <summary>
+         * Method to get List of all the Contributors of this GitRepository who contributed in last year.
+         * </summary>
+         * <returns>Retruns List of Contributor objects</returns>
+         */
+        List<Contributor> GetContributorsLastYear()
+        {
+            DateTime startDate = DateTime.Now.AddYears(-1);
+            DateTime endDate = DateTime.Now;
+            List<Contributor> contributors = new();
+            try
+            {
+                var uniqueAuthors = Commits.Select(c => c.Author).Distinct(new AuthorComparer());
+                foreach (var author in uniqueAuthors)
+                {
+                    if(author.When.Date >= startDate.Date && author.When.Date <= endDate.Date)
+                    {
+                        contributors.Add(new Contributor(author, GetContributorCommits(author.Email)));
+                    }
                 }
             }
             catch (Exception e)

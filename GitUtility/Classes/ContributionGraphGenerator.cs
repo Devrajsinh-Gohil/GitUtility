@@ -13,7 +13,7 @@ namespace GitUtility.Classes
 		 * Properties of a ContributionGraph
 		 * </summary>
 		 */
-        private Contributor Contributor { get; set; }
+        private Contributor? Contributor { get; set; }
         private DateTime StartDate { get; set; }
         private DateTime EndDate { get; set; }
         public List<GraphCell> ContributionGraph { get; set; }
@@ -30,7 +30,14 @@ namespace GitUtility.Classes
             Contributor = contributor;
             StartDate = DateTime.Now.AddYears(-1);
             EndDate = DateTime.Now;
-            ContributionGraph = CreateGraph();
+            if(contributor != null)
+            {
+                ContributionGraph = CreateGraph();
+            }
+            else
+            {
+                ContributionGraph = CreateEmptyGraph();
+            }
             ContributionCount = 0;
         }
 
@@ -87,6 +94,32 @@ namespace GitUtility.Classes
                 Console.WriteLine(e.Message);
             }
             return count;
+        }
+
+
+        /**
+         * <summary>
+         * Method to create an empty graph if no Contributor is null.
+         * </summary>
+         * <returns>List of GraphCell objects</returns>
+         */
+        List<GraphCell> CreateEmptyGraph()
+        {
+            List<GraphCell> graph = new();
+            try
+            {
+                int totalDays = (int)(EndDate - StartDate).TotalDays;
+                for (int i = 0; i < totalDays; i++)
+                {
+                    DateTime date = StartDate.AddDays(i);
+                    graph.Add(new GraphCell(date, 0));
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            return graph;
         }
     }
 }
