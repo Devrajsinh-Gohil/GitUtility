@@ -7,18 +7,18 @@
     var AnnualTop2 = Model.Top2AuthorsThisYear;
 
     var ContributorInfo = Model.CurrentAuhtorInfo;
-    var CurrentContributorRank = Model.CurrentAuthorRank;
-    var CurrentContributorRankThisYear = Model.CurrentAuthorRankThisYear;
+    var CurrentContributorRank = (Model.CurrentAuthorRank == "0") ? "no contributions" : Model.CurrentAuthorRank;
+    var CurrentContributorRankThisYear = (Model.CurrentAuthorRankThisYear == "0") ? "no contributions this year" : Model.CurrentAuthorRankThisYear;
     var ContributorCount = Model.TotalContributors;
     var AnnualContributorCount = Model.TotalContributorsThisYear;
     var Graph = Model.HeatMap.HeatMap;
 
-    int LastYearCommitCount = (ContributorInfo == null) ? 0 : ContributorInfo.CommitCountThisYear;
+    string LastYearCommitCount = (ContributorInfo == null) ? "no" : ContributorInfo.CommitCountThisYear.ToString();
     var ContributorName = (ContributorInfo == null) ? Model.AuthorEmail : ContributorInfo.Author.Name;
 
     @* Contribution graph *@
-    var startDate = Graph.Min(cell => cell.Date);
-    var endDate = Graph.Max(cell => cell.Date);
+    var startDate = DateTime.Now.AddYears(-1);
+    var endDate = DateTime.Now;
     var totalDays = (endDate - startDate).Days;
     var totalWeeks = (int)Math.Ceiling(totalDays / 7.0);
     var months = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
@@ -265,7 +265,7 @@
                             for (var day = 0; day < 7; day++) // 7 days in a week
                             {
                                 var currentDay = startDate.AddDays(week * 7 + day - firstDayOfWeek);
-                                if (currentDay > endDate.AddDays(1))
+                                if (currentDay > endDate)
                                 {
                                     break;
                                 }
