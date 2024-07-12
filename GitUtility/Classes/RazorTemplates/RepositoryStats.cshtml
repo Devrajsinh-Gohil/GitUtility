@@ -1,0 +1,305 @@
+@model GitUtility.Classes.Statistics
+@{
+    @* Data *@
+    var RepositoryName = Model.RepositoryName;
+    var RepositoryPath = Model.RepositoryPath;
+    var Top2 = Model.Top2Authors;
+    var AnnualTop2 = Model.Top2AuthorsThisYear;
+
+    var ContributorInfo = Model.CurrentAuhtorInfo;
+    var CurrentContributorRank = Model.CurrentAuthorRank;
+    var CurrentContributorRankThisYear = Model.CurrentAuthorRankThisYear;
+    var ContributorCount = Model.TotalContributors;
+    var AnnualContributorCount = Model.TotalContributorsThisYear;
+    var Graph = Model.HeatMap.HeatMap;
+
+    int LastYearCommitCount = (ContributorInfo == null) ? 0 : ContributorInfo.CommitCountThisYear;
+    var ContributorName = (ContributorInfo == null) ? Model.AuthorEmail : ContributorInfo.Author.Name;
+
+    @* Contribution graph *@
+    var startDate = Graph.Min(cell => cell.Date);
+    var endDate = Graph.Max(cell => cell.Date);
+    var totalDays = (endDate - startDate).Days;
+    var totalWeeks = (int)Math.Ceiling(totalDays / 7.0);
+    var months = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+    var weekdays = new[] { "Mon", "Wed", "Fri" };
+    var monthStartDays = Enumerable.Range(0, totalWeeks)
+        .Select(week => startDate.AddDays(week * 7))
+        .Where(day => day.Day <= 7) // Get the first day of each month
+        .ToList();
+
+    // Calculate min and max contribution counts
+    var minContributionCount = Graph.Min(cell => cell.CommitCount);
+    var maxContributionCount = Graph.Max(cell => cell.CommitCount);
+    var range = maxContributionCount - minContributionCount;
+
+    // Calculate thresholds dynamically
+    var lowThreshold = minContributionCount + range * 0.25;
+    var mediumThreshold = minContributionCount + range * 0.5;
+    var highThreshold = minContributionCount + range * 0.75;
+}
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contribution Graph</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            background-color: #f6f8fa;
+            color: #24292e;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .wrapper {
+            display: flex;
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+            width: 100%;
+            background-color: #fff;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(27, 31, 35, 0.12);
+        }
+
+        .stats-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+            .stats-wrapper div {
+                margin-bottom: 10px;
+            }
+
+            .stats-wrapper .repository-name {
+                font-weight: 500;
+                margin-bottom: 5px;
+                font-size: 16px;
+            }
+
+            .stats-wrapper .repository-path {
+                font-weight: 500;
+                margin-bottom: 5px;
+                font-size: 16px;
+            }
+
+            .stats-wrapper .section-title {
+                font-weight: 500;
+                margin-bottom: 5px;
+                font-size: 16px;
+            }
+
+            .stats-wrapper .contributor {
+                margin-left: 20px;
+                font-size: 14px;
+            }
+
+            .stats-wrapper .rank {
+                font-weight: bold;
+                color: #0366d6;
+            }
+
+            .stats-wrapper .contributor-name {
+                font-weight: 400;
+            }
+
+            .stats-wrapper .contributor-email {
+                font-style: italic;
+                color: #586069;
+            }
+
+        .contribution-graph {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .contribution-count {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .graph-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 10px;
+        }
+
+        .calendar {
+            display: grid;
+            grid-auto-flow: column;
+            grid-template-columns: auto repeat(53, 11px); /* 53 weeks */
+            grid-template-rows: auto repeat(7, 11px); /* 7 days */
+            gap: 2px;
+        }
+
+        .day {
+            width: 11px;
+            height: 11px;
+            border-radius: 2px;
+        }
+
+        .low {
+            background-color: #9be9a8;
+        }
+
+        .medium {
+            background-color: #40c463;
+        }
+
+        .high {
+            background-color: #30a14e;
+        }
+
+        .very-high {
+            background-color: #216e39;
+        }
+
+        .none {
+            background-color: #ebedf0;
+        }
+
+        .month-label {
+            text-align: center;
+            margin-bottom: 2px;
+            font-size: 12px;
+        }
+
+        .weekday-label {
+            text-align: right;
+            font-size: 12px;
+            margin-right: 4px;
+        }
+
+        .legend {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+            .legend span {
+                margin-right: 5px;
+                font-size: 12px;
+                color: #767676;
+            }
+
+            .legend .day {
+                margin-right: 3px;
+            }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="container">
+            <div class="stats-wrapper">
+                <div>Repository: <span class="repository-name">@RepositoryName</span></div>
+                <div>Path: <span class="repository-path">@RepositoryPath</span></div>
+                <div class="section-title">Stats:</div>
+                <div>Total Contributors: <span class="total-contributors">@ContributorCount</span></div>
+                <div class="section-title">Top Contributors:</div>
+                @for (var i = 0; i < Top2.Count; i++)
+                {
+                    <div class="contributor">
+                        <span class="rank">@(i + 1).</span> <span class="contributor-name">@Top2[i].Author.Name</span>
+                        <span class="contributor-email">&lt; @Top2[i].Author.Email &gt;</span>
+                        Contributions: <span class="contributions">@Top2[i].TotalCommitCount</span>
+                    </div>
+                }
+                <div>@ContributorName's Rank:<span class="rank"> @CurrentContributorRank</span></div>
+                <br>
+                <div class="section-title">Stats for Last Year:</div>
+                <div>Total Contributors in last year: <span class="annual-contributors">@AnnualContributorCount</span></div>
+                <div class="section-title">Top Contributors in last year:</div>
+                @for (var i = 0; i < AnnualTop2.Count; i++)
+                {
+                    <div class="contributor">
+                        <span class="rank">@(i + 1).</span> <span class="contributor-name">@AnnualTop2[i].Author.Name</span>
+                        <span class="contributor-email">&lt;@AnnualTop2[i].Author.Email &gt;</span>
+                        Contributions: <span class="contributions">@AnnualTop2[i].CommitCountThisYear</span>
+                    </div>
+                }
+                <div>@ContributorName's Rank: <span class="rank">@CurrentContributorRankThisYear</span></div>
+            </div>
+            <div class="contribution-graph">
+                <div class="contribution-count">@LastYearCommitCount contributions in last year by @ContributorName</div>
+                <div class="graph-wrapper">
+                    <div class="calendar">
+                        <!-- Month Labels -->
+                        @foreach (var day in monthStartDays)
+                        {
+                            var weekIndex = (day - startDate).Days / 7 + 2; // Adjust for column offset
+                            <div class="month-label" style="grid-column: @(weekIndex)">@months[day.Month - 1]</div>
+                        }
+
+                        <!-- Weekday Labels -->
+                        @for (var i = 0; i < weekdays.Length; i++)
+                        {
+                            <div class="weekday-label" style="grid-row: @(i * 2 + 3)">@weekdays[i]</div>
+                        }
+                        <!-- Contribution Cells -->
+                        @{
+                            var firstDayOfWeek = (int)startDate.DayOfWeek;
+                        }
+                        @for (var week = 0; week < 53; week++) // 53 weeks in a year
+                        {
+                            for (var day = 0; day < 7; day++) // 7 days in a week
+                            {
+                                var currentDay = startDate.AddDays(week * 7 + day - firstDayOfWeek);
+                                if (currentDay > endDate.AddDays(1))
+                                {
+                                    break;
+                                }
+                                if (currentDay < startDate)
+                                {
+                                    continue;
+                                }
+
+                                var currentDayOfWeek = (int)currentDay.DayOfWeek;
+                                var row = currentDayOfWeek + 2; // +2 to adjust for grid-row offset
+
+                                var cell = Graph.FirstOrDefault(c => c.Date.Date == currentDay.Date);
+                                var colorClass = cell == null ? "none" :
+                                    cell.CommitCount == 0 ? "none" :
+                                    cell.CommitCount <= lowThreshold ? "low" :
+                                    cell.CommitCount <= mediumThreshold ? "medium" :
+                                    cell.CommitCount <= highThreshold ? "high" : "very-high";
+
+                                <div class="day @colorClass" title="@currentDay.ToString("yyyy-MM-dd") - @(cell?.CommitCount ?? 0) contributions" style="grid-column: @(week + 2); grid-row: @(row)"></div>
+                            }
+                        }
+                    </div>
+                    <div class="legend">
+                        <span>Less</span>
+                        <div class="day none"></div>
+                        <div class="day low"></div>
+                        <div class="day medium"></div>
+                        <div class="day high"></div>
+                        <div class="day very-high"></div>
+                        <span>More</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
