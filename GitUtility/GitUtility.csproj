@@ -11,11 +11,9 @@
 
   <ItemGroup>
     <None Remove="Classes\" />
-    <None Remove="Backup\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Classes\" />
-    <Folder Include="Backup\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="LibGit2Sharp" Version="0.30.0" />

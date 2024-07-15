@@ -3,11 +3,11 @@ namespace GitUtility.Classes
 {
 	public class Statistics
 	{
-        public AuthorCommitInfo? CurrentAuhtorInfo { get; set; }
         public string RepositoryName { get; set; }
         public string RepositoryPath { get; set; }
-        public List<Commit> Commits { get; set; }
         public string AuthorEmail { get; set; }
+        public AuthorCommitInfo? CurrentAuhtorInfo { get; set; }
+        public List<Commit> Commits { get; set; }
         public string? TotalContributors { get; set; }
         public string? TotalContributorsThisYear { get; set; }
         public string? CurrentAuthorRank { get; set; }

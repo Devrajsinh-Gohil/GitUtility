@@ -1,31 +1,48 @@
 ﻿
-using System.Diagnostics;
 using GitUtility.Classes;
-using LibGit2Sharp;
 
 namespace GitUtility
 {
     internal class GitUtility
     {
-        static void Main()
+        private static string RootPath { get; set; }
+        private static string Email { get; set; }
+        private static RootDirectory RootDirectory { get; set; }
+        private static List<Commit> AllCommits { get; set; }
+        private static List<Statistics> Statistics { get; set; }
+        private static HTMLGenerator HTMLGenerator { get; set; }
+
+        static void Main(string[] args)
         {
             try
             {
-                RootDirectory rootDirectory = new("/Users/devrajsinhgohil/Desktop/Test");
-                string email = "safia@microsoft.com";
-                List<Classes.Commit> allCommits = new();
-                List<Statistics> statistics = new();
-                rootDirectory.FindRepositories();
-                foreach (Classes.Repository repository in rootDirectory.Repositories)
+                if (args.Length != 2)
                 {
-                    repository.GetCommits();
-                    allCommits.AddRange(repository.Commits);
-                    statistics.Add(new(repository.RepositoryName, repository.RepositoryPath, repository.Commits, email));
+                    Console.WriteLine("Usage: ./GitUtility <root-directory-path> <author-email>");
                 }
-                statistics.Add(new("Overall Statistics", rootDirectory.RootPath, allCommits, email));
+                else
+                {
+                    RootPath = args[0];
+                    Email = args[1];
+                    RootDirectory = new(RootPath);
+                    AllCommits = new();
+                    Statistics = new();
 
-                HTMLGenerator hTMLGenerator = new(rootDirectory.RootPath, statistics);
-                hTMLGenerator.GenerateRepositoryStats();
+                    RootDirectory.FindRepositories();
+
+                    foreach (Repository repository in RootDirectory.Repositories)
+                    {
+                        repository.GetCommits();
+                        AllCommits.AddRange(repository.Commits);
+                        Statistics.Add(new(repository.RepositoryName, repository.RepositoryPath, repository.Commits, Email));
+                    }
+
+                    Statistics.Add(new("Overall Statistics", RootDirectory.RootPath, AllCommits, Email));
+
+                    HTMLGenerator HTMLGenerator = new(RootDirectory.RootPath, Statistics);
+                    HTMLGenerator.GenerateRepositoryStats();
+                }
+
             }
             catch (Exception e)
             {
